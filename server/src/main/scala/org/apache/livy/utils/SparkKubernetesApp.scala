@@ -29,9 +29,11 @@ import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 import io.fabric8.kubernetes.api.model._
-import io.fabric8.kubernetes.api.model.extensions.{Ingress, IngressBuilder}
+//import io.fabric8.kubernetes.api.model.extensions.{Ingress, IngressBuilder}
 import io.fabric8.kubernetes.client.{ConfigBuilder, _}
 import org.apache.commons.lang.StringUtils
+
+import  io.fabric8.kubernetes.api.model.networking.v1.{Ingress,IngressBuilder}
 
 import org.apache.livy.{LivyConf, Logging, Utils}
 
