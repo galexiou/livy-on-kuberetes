@@ -248,7 +248,7 @@ class SparkKubernetesApp private[utils] (
   @tailrec
   private def getAppFromTag(
     appTag: String,
-    pollInterval: Duration,
+    pollInterval: FiniteDuration,
     deadline: Deadline): KubernetesApplication = {
     import KubernetesExtensions._
 
@@ -265,7 +265,7 @@ class SparkKubernetesApp private[utils] (
             "Kubernetes; or 2) Kubernetes cluster doesn't have enough resources to start the " +
             "application in time. Please check Livy log and Kubernetes log to know the details.")
         } else {
-          Clock.sleep(pollInterval)
+          Clock.sleep(pollInterval.toMillis)
           getAppFromTag(appTag, pollInterval, deadline)
         }
     }
