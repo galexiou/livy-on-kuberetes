@@ -80,7 +80,9 @@ object SparkKubernetesApp extends Logging {
 
   private var cacheLogSize: Int = _
   private var appLookupTimeout: FiniteDuration = _
-  private var pollInterval: FiniteDuration = _
+//  private var pollInterval: FiniteDuration = _
+private var pollInterval : FiniteDuration = _
+  private var pollInterval2 : Nothing = _
 
   private var sessionLeakageCheckTimeout: Long = _
   private var sessionLeakageCheckInterval: Long = _
@@ -141,7 +143,7 @@ class SparkKubernetesApp private[utils] (
     try {
       // Get KubernetesApplication by appTag.
       val app: KubernetesApplication = try {
-        getAppFromTag(appTag, pollInterval, appLookupTimeout.fromNow)
+        getAppFromTag(appTag, pollInterval2, appLookupTimeout.fromNow)
       } catch {
         case e: Exception =>
           appPromise.failure(e)
@@ -263,7 +265,7 @@ class SparkKubernetesApp private[utils] (
             "Kubernetes; or 2) Kubernetes cluster doesn't have enough resources to start the " +
             "application in time. Please check Livy log and Kubernetes log to know the details.")
         } else {
-          Clock.sleep(pollInterval.toMillis)
+          Clock.sleep(pollInterval)
           getAppFromTag(appTag, pollInterval, deadline)
         }
     }
