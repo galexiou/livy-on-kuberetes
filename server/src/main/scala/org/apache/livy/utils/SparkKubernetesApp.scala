@@ -16,25 +16,22 @@
  */
 package org.apache.livy.utils
 
+import io.fabric8.kubernetes.api.model._
+import io.fabric8.kubernetes.api.model.networking.v1.{Ingress, IngressBuilder, IngressServiceBackend, IngressServiceBackendBuilder, ServiceBackendPort}
+
 import java.net.URLEncoder
 import java.util.Collections
 import java.util.concurrent.TimeoutException
-
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
-
-import io.fabric8.kubernetes.api.model._
+import scala.util.{Failure, Success, Try}
 //import io.fabric8.kubernetes.api.model.extensions.{Ingress, IngressBuilder}
 import io.fabric8.kubernetes.client.{ConfigBuilder, _}
 import org.apache.commons.lang.StringUtils
-
-import  io.fabric8.kubernetes.api.model.networking.v1.{Ingress,IngressBuilder}
-
 import org.apache.livy.{LivyConf, Logging, Utils}
 
 object SparkKubernetesApp extends Logging {
@@ -82,9 +79,7 @@ object SparkKubernetesApp extends Logging {
 
   private var cacheLogSize: Int = _
   private var appLookupTimeout: FiniteDuration = _
-//  private var pollInterval: FiniteDuration = _
 private var pollInterval : FiniteDuration = _
-  private var pollInterval2 : Nothing = _
 
   private var sessionLeakageCheckTimeout: Long = _
   private var sessionLeakageCheckInterval: Long = _
@@ -145,7 +140,7 @@ class SparkKubernetesApp private[utils] (
     try {
       // Get KubernetesApplication by appTag.
       val app: KubernetesApplication = try {
-        getAppFromTag(appTag, pollInterval2, appLookupTimeout.fromNow)
+        getAppFromTag(appTag, pollInterval, appLookupTimeout.fromNow)
       } catch {
         case e: Exception =>
           appPromise.failure(e)
@@ -340,7 +335,8 @@ class KubernetesApplication(driverPod: Pod) {
 }
 
 private[utils] case class KubernetesAppReport(driver: Option[Pod], executors: Seq[Pod],
-  appLog: IndexedSeq[String], ingress: Option[Ingress], livyConf: LivyConf) {
+//  appLog: IndexedSeq[String], ingress: Option[Ingress], livyConf: LivyConf) {
+appLog: IndexedSeq[String], ingress: Option[Ingress], livyConf: LivyConf) {
 
   import KubernetesConstants._
 
@@ -495,10 +491,11 @@ private[utils] object KubernetesExtensions {
           .withName(app.getApplicationPod.getMetadata.getName)
           .tailingLines(cacheLogSize).getLog.split("\n").toIndexedSeq
       ).getOrElse(IndexedSeq.empty)
-      val ingress = client.extensions.ingresses.inNamespace(app.getApplicationNamespace)
-        .withLabel(SPARK_APP_TAG_LABEL, app.getApplicationTag)
-        .list.getItems.asScala.headOption
+//      val ingress = client.extensions.ingresses.inNamespace(app.getApplicationNamespace)
+      val ingress = client.network().v1().ingresses().inNamespace(app.getApplicationNamespace).withLabel(SPARK_APP_TAG_LABEL,app.getApplicationTag)
+        .list().getItems.asScala.headOption
       KubernetesAppReport(driver, executors, appLog, ingress, livyConf)
+
     }
 
     def createSparkUIIngress(app: KubernetesApplication, livyConf: LivyConf): Unit = {
@@ -521,9 +518,14 @@ private[utils] object KubernetesExtensions {
         livyConf.get(LivyConf.KUBERNETES_INGRESS_ADDITIONAL_CONF_SNIPPET),
         annotations: _*
       )
-      val resources: Seq[HasMetadata] = Seq(sparkUIService, sparkUIIngress)
-      addOwnerReference(app.getApplicationPod, resources: _*)
-      client.resourceList(resources.asJava).createOrReplace()
+      addOwnerReference(app.getApplicationPod,sparkUIService)
+      client.services().createOrReplace(sparkUIService)
+
+      addOwnerReference(app.getApplicationPod,sparkUIIngress)
+      client.network().v1().ingresses().inNamespace(app.getApplicationNamespace).createOrReplace(sparkUIIngress)
+//      val resources: Seq[HasMetadata] = Seq(sparkUIService, sparkUIIngress)
+//      addOwnerReference(app.getApplicationPod, resources: _*)
+//      client.resourceList(resources.asJava).createOrReplace()
     }
 
     private def buildSparkUIIngress(
@@ -541,6 +543,12 @@ private[utils] object KubernetesExtensions {
           NGINX_CONFIG_SNIPPET.concat(additionalConfSnippet).format(appTag, appTag, appTag)
       ) ++ additionalAnnotations
 
+      val bePort = new ServiceBackendPort()
+          bePort.setNumber(4040);
+      val svc = new IngressServiceBackend()
+          svc.setName(fixResourceName(s"${app.getApplicationPod.getMetadata.getName}-ui"))
+          svc.setPort(bePort)
+
       val builder = new IngressBuilder()
         .withApiVersion("networking.k8s.io/v1")
         .withNewMetadata()
@@ -557,16 +565,19 @@ private[utils] object KubernetesExtensions {
         .addNewPath()
         .withPath(s"/$appTag/?(.*)")
         .withNewBackend()
-        .withServiceName(service.getMetadata.getName)
-        .withNewServicePort(service.getSpec.getPorts.get(0).getName)
+        .withService(svc)
+//        .withNewService().withName(fixResourceName(s"${app.getApplicationPod.getMetadata.getName}-ui"))
+//        .withNewPort().withName("spark-ui").withNumber(4040).endPort().endService()
         .endBackend()
         .endPath()
         .endHttp()
         .endRule()
+        .endSpec()
       if (protocol.endsWith("s") && tlsSecretName != null && tlsSecretName.nonEmpty) {
-        builder.addNewTl().withSecretName(tlsSecretName).addToHosts(host).endTl()
+          builder.editOrNewSpec().addNewTl().withSecretName(tlsSecretName).addToHosts(host).endTl()
+//        builder.addNewTl().withSecretName(tlsSecretName).addToHosts(host).endTl()
       }
-      builder.endSpec().build()
+      builder.build()
     }
 
     private def fixResourceName(name: String): String =
@@ -577,7 +588,9 @@ private[utils] object KubernetesExtensions {
       portName: String = "spark-ui",
       port: Int = 4040
     ): Service = {
-      new ServiceBuilder()
+
+        new ServiceBuilder()
+//        new IngressServiceBackendBuilder()
         .withNewMetadata()
         .withName(fixResourceName(s"${app.getApplicationPod.getMetadata.getName}-ui"))
         .withNamespace(app.getApplicationNamespace)
@@ -613,14 +626,17 @@ private[utils] object KubernetesExtensions {
       }
     }
 
+
+
   }
 
 }
 
 private[utils] object KubernetesClientFactory {
-  import java.io.File
   import com.google.common.base.Charsets
   import com.google.common.io.Files
+
+  import java.io.File
 
   private implicit class OptionString(val string: String) extends AnyVal {
     def toOption: Option[String] = if (string == null || string.isEmpty) None else Option(string)
