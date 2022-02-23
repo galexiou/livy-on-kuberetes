@@ -563,6 +563,7 @@ private[utils] object KubernetesExtensions {
         .withHost(host)
         .withNewHttp()
         .addNewPath()
+        .withPathType("Prefix")
         .withPath(s"/$appTag/?(.*)")
         .withNewBackend()
         .withService(svc)
