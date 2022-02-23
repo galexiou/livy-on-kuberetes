@@ -17,13 +17,12 @@
 package org.apache.livy.utils
 
 import java.util.Objects._
-
 import io.fabric8.kubernetes.api.model._
-import io.fabric8.kubernetes.api.model.extensions.{Ingress, IngressRule, IngressSpec}
+//import io.fabric8.kubernetes.api.model.extensions.{Ingress, IngressRule, IngressSpec}
+import io.fabric8.kubernetes.api.model.networking.v1.{Ingress, IngressRule, IngressSpec}
 import org.mockito.Mockito.when
 import org.scalatest.FunSpec
 import org.scalatest.mock.MockitoSugar._
-
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 
 class SparkKubernetesAppSpec extends FunSpec with LivyBaseUnitTestSuite {
