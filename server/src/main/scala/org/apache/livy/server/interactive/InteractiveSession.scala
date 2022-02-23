@@ -402,7 +402,7 @@ class InteractiveSession(
       val driverProcess = client.flatMap { c => Option(c.getDriverProcess) }
         .map(new LineBufferedProcess(_, livyConf.getInt(LivyConf.SPARK_LOGS_SIZE)))
 
-      if (!livyConf.isRunningOnKubernetes()){
+      if (livyConf.isRunningOnKubernetes()){
         driverProcess.map(_ => SparkApp.create(appTag, appId, driverProcess, livyConf, Some(this)))
       } else if (livyConf.isRunningOnYarn() || driverProcess.isDefined) {
         Some(SparkApp.create(appTag, appId, driverProcess, livyConf, Some(this)))
