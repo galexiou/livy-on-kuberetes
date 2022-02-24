@@ -344,7 +344,7 @@ class ContextLauncher {
       InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
       String ip = insocket.getAddress().getHostAddress();
       ContextInfo info = new ContextInfo(msg.host, msg.port, clientId, secret);
-      LOG.info("(ALEXIOU) - Got remote driver address : {}", msg);
+      LOG.info("(ALEXIOU) - Got remote driver address : {"+info.remoteAddress+":"+info.remotePort+" -- "+info.clientId +" sec "+info.secret+"}", msg);
       if (promise.trySuccess(info)) {
         timeout.cancel(true);
         LOG.debug("Received driver info for client {}: {}/{}.", client.getChannel(),
