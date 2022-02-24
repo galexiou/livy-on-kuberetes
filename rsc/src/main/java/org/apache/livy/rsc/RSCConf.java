@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import javax.security.sasl.Sasl;
 
@@ -131,13 +132,13 @@ public class RSCConf extends ClientConf<RSCConf> {
         while (addrs.hasMoreElements()) {
           InetAddress addr = addrs.nextElement();
           if (!addr.isLinkLocalAddress() && !addr.isLoopbackAddress()
-              && addr instanceof Inet4Address) {
+                  && addr instanceof Inet4Address) {
             // We've found an address that looks reasonable!
             LOG.warn("Your hostname, {}, resolves to a loopback address; using {} "
-                + " instead (on interface {})", address.getHostName(), addr.getHostAddress(),
-                ni.getName());
+                            + " instead (on interface {})", address.getHostName(), addr.getHostAddress(),
+                    ni.getName());
             LOG.warn("Set '{}' if you need to bind to another address.",
-              Entry.RPC_SERVER_ADDRESS.key);
+                    Entry.RPC_SERVER_ADDRESS.key);
             return addr.getHostAddress();
           }
         }
@@ -145,30 +146,36 @@ public class RSCConf extends ClientConf<RSCConf> {
     }
 
     LOG.warn("Your hostname, {}, resolves to a loopback address, but we couldn't find "
-        + "any external IP address!", address.getCanonicalHostName());
+            + "any external IP address!", address.getCanonicalHostName());
     LOG.warn("Set {} if you need to bind to another address.",
-      Entry.RPC_SERVER_ADDRESS.key);
+            Entry.RPC_SERVER_ADDRESS.key);
     return address.getCanonicalHostName();
   }
 
+  public boolean isRunningOnKubernetes() {
+    return Optional.ofNullable(get("livy.spark.master"))
+            .filter(s -> s.startsWith("k8s"))
+            .isPresent();
+  }
+
   private static final Map<String, DeprecatedConf> configsWithAlternatives
-    = Collections.unmodifiableMap(new HashMap<String, DeprecatedConf>() {{
-      put(RSCConf.Entry.CLIENT_IN_PROCESS.key, DepConf.CLIENT_IN_PROCESS);
-      put(RSCConf.Entry.CLIENT_SHUTDOWN_TIMEOUT.key, DepConf.CLIENT_SHUTDOWN_TIMEOUT);
-      put(RSCConf.Entry.DRIVER_CLASS.key, DepConf.DRIVER_CLASS);
-      put(RSCConf.Entry.SERVER_IDLE_TIMEOUT.key, DepConf.SERVER_IDLE_TIMEOUT);
-      put(RSCConf.Entry.PROXY_USER.key, DepConf.PROXY_USER);
-      put(RSCConf.Entry.TEST_STUCK_END_SESSION.key, DepConf.TEST_STUCK_END_SESSION);
-      put(RSCConf.Entry.TEST_STUCK_START_DRIVER.key, DepConf.TEST_STUCK_START_DRIVER);
-      put(RSCConf.Entry.JOB_CANCEL_TRIGGER_INTERVAL.key, DepConf.JOB_CANCEL_TRIGGER_INTERVAL);
-      put(RSCConf.Entry.JOB_CANCEL_TIMEOUT.key, DepConf.JOB_CANCEL_TIMEOUT);
-      put(RSCConf.Entry.RETAINED_STATEMENTS.key, DepConf.RETAINED_STATEMENTS);
+          = Collections.unmodifiableMap(new HashMap<String, DeprecatedConf>() {{
+    put(RSCConf.Entry.CLIENT_IN_PROCESS.key, DepConf.CLIENT_IN_PROCESS);
+    put(RSCConf.Entry.CLIENT_SHUTDOWN_TIMEOUT.key, DepConf.CLIENT_SHUTDOWN_TIMEOUT);
+    put(RSCConf.Entry.DRIVER_CLASS.key, DepConf.DRIVER_CLASS);
+    put(RSCConf.Entry.SERVER_IDLE_TIMEOUT.key, DepConf.SERVER_IDLE_TIMEOUT);
+    put(RSCConf.Entry.PROXY_USER.key, DepConf.PROXY_USER);
+    put(RSCConf.Entry.TEST_STUCK_END_SESSION.key, DepConf.TEST_STUCK_END_SESSION);
+    put(RSCConf.Entry.TEST_STUCK_START_DRIVER.key, DepConf.TEST_STUCK_START_DRIVER);
+    put(RSCConf.Entry.JOB_CANCEL_TRIGGER_INTERVAL.key, DepConf.JOB_CANCEL_TRIGGER_INTERVAL);
+    put(RSCConf.Entry.JOB_CANCEL_TIMEOUT.key, DepConf.JOB_CANCEL_TIMEOUT);
+    put(RSCConf.Entry.RETAINED_STATEMENTS.key, DepConf.RETAINED_STATEMENTS);
   }});
 
   // Maps deprecated key to DeprecatedConf with the same key.
   // There are no deprecated configs without alternatives currently.
   private static final Map<String, DeprecatedConf> deprecatedConfigs
-    = Collections.unmodifiableMap(new HashMap<String, DeprecatedConf>());
+          = Collections.unmodifiableMap(new HashMap<String, DeprecatedConf>());
 
   protected Map<String, DeprecatedConf> getConfigsWithAlternatives() {
     return configsWithAlternatives;
