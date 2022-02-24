@@ -172,6 +172,7 @@ public class RSCDriver extends BaseProtocol {
     // this option is set in class org.apache.spark.deploy.k8s.features.DriverServiceFeatureStep:
     // line 61: val driverHostname = s"$resolvedServiceName.${kubernetesConf.namespace()}.svc"
     if (conf.get("spark.master").startsWith("k8s")) {
+      LOG.info("Setting RPC ADDR. to: "+conf.get("spark.driver.host"));
       livyConf.set(RPC_SERVER_ADDRESS, conf.get("spark.driver.host"));
     }
 
@@ -209,6 +210,7 @@ public class RSCDriver extends BaseProtocol {
     Rpc callbackRpc = Rpc.createClient(livyConf, server.getEventLoopGroup(),
       launcherAddress, launcherPort, clientId, secret, this).get();
     try {
+      LOG.info(" ALEXIOU REMOTE DRIVER ADDR. : "+server.getAddress()+": "+server.getPort());
       callbackRpc.call(new RemoteDriverAddress(server.getAddress(), server.getPort())).get(
         livyConf.getTimeAsMs(RPC_CLIENT_HANDSHAKE_TIMEOUT), TimeUnit.MILLISECONDS);
     } catch (TimeoutException te) {
@@ -297,6 +299,8 @@ public class RSCDriver extends BaseProtocol {
     SparkEntries entries = new SparkEntries(conf);
     // Explicitly call sc() to initialize SparkContext.
     entries.sc();
+    LOG.info("ALEXIOU RSCDriver initialized SC for app->: "+entries.sc().appName());
+
     return entries;
   }
 
@@ -344,7 +348,9 @@ public class RSCDriver extends BaseProtocol {
 
       SparkEntries entries = initializeSparkEntries();
       synchronized (jcLock) {
+        LOG.info("ALEXIOU :Trying to initialize context");
         jc = new JobContextImpl(entries, localTmpDir, this);
+        LOG.info("ALEXIOU SC: "+jc.getLocalTmpDir().toString());
         jcLock.notifyAll();
       }
 
