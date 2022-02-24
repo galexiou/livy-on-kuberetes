@@ -28,9 +28,9 @@ object AppInfo {
 }
 
 case class AppInfo(
-  var driverLogUrl: Option[String] = None,
-  var sparkUiUrl: Option[String] = None,
-  var executorLogUrls: Option[String] = None) {
+                    var driverLogUrl: Option[String] = None,
+                    var sparkUiUrl: Option[String] = None,
+                    var executorLogUrls: Option[String] = None) {
   import AppInfo._
   def asJavaMap: java.util.Map[String, String] =
     Map(
@@ -70,9 +70,9 @@ object SparkApp {
    * @param sparkConf
    */
   def prepareSparkConf(
-      uniqueAppTag: String,
-      livyConf: LivyConf,
-      sparkConf: Map[String, String]): Map[String, String] = {
+                        uniqueAppTag: String,
+                        livyConf: LivyConf,
+                        sparkConf: Map[String, String]): Map[String, String] = {
     if (livyConf.isRunningOnYarn()) {
       val userYarnTags = sparkConf.get(SPARK_YARN_TAG_KEY).map("," + _).getOrElse("")
       val mergedYarnTags = uniqueAppTag + userYarnTags
@@ -80,11 +80,26 @@ object SparkApp {
         SPARK_YARN_TAG_KEY -> mergedYarnTags,
         "spark.yarn.submit.waitAppCompletion" -> "false")
     } else if (livyConf.isRunningOnKubernetes()) {
-        import KubernetesConstants._
-        sparkConf ++ Map(
-          s"spark.kubernetes.driver.label.$SPARK_APP_TAG_LABEL" -> uniqueAppTag,
-          s"spark.kubernetes.executor.label.$SPARK_APP_TAG_LABEL" -> uniqueAppTag,
-          "spark.kubernetes.submission.waitAppCompletion" -> "false")
+      // We don't allow to submit applications to the namespaces different from the configured
+      val kubernetesNamespaces = livyConf.getKubernetesNamespaces()
+      val targetNamespace = sparkConf.getOrElse("spark.kubernetes.namespace",
+        SparkKubernetesApp.kubernetesClient.getDefaultNamespace)
+      if (kubernetesNamespaces.nonEmpty && !kubernetesNamespaces.contains(targetNamespace)) {
+        throw new IllegalArgumentException(
+          s"Requested namespace $targetNamespace doesn't match the configured: " +
+            kubernetesNamespaces.mkString(", "))
+      }
+
+      import KubernetesConstants._
+      sparkConf ++ Map(
+        "spark.kubernetes.namespace" -> targetNamespace,
+        // Mark Spark pods with the unique appTag label to be used for their discovery
+        s"spark.kubernetes.driver.label.$SPARK_APP_TAG_LABEL" -> uniqueAppTag,
+        s"spark.kubernetes.executor.label.$SPARK_APP_TAG_LABEL" -> uniqueAppTag,
+        // Mark Spark pods as created by Livy for the additional tracing
+        s"spark.kubernetes.driver.label.$CREATED_BY_ANNOTATION" -> "livy",
+        s"spark.kubernetes.executor.label.$CREATED_BY_ANNOTATION" -> "livy",
+        "spark.kubernetes.submission.waitAppCompletion" -> "false")
     } else {
       sparkConf
     }
@@ -97,17 +112,17 @@ object SparkApp {
    * @param uniqueAppTag A tag that can uniquely identify the application.
    */
   def create(
-      uniqueAppTag: String,
-      appId: Option[String],
-      process: Option[LineBufferedProcess],
-      livyConf: LivyConf,
-      listener: Option[SparkAppListener]): SparkApp = {
+              uniqueAppTag: String,
+              appId: Option[String],
+              process: Option[LineBufferedProcess],
+              livyConf: LivyConf,
+              listener: Option[SparkAppListener]): SparkApp = {
     if (livyConf.isRunningOnYarn()) {
       new SparkYarnApp(uniqueAppTag, appId, process, listener, livyConf)
     } else if (livyConf.isRunningOnKubernetes()) {
       new SparkKubernetesApp(uniqueAppTag, appId, process, listener, livyConf)
     } else {
-      require(process.isDefined, "process must not be None when Livy master is not YARN or" +
+      require(process.isDefined, "process must not be None when Livy master is not YARN or " +
         "Kubernetes.")
       new SparkProcApp(process.get, listener)
     }
