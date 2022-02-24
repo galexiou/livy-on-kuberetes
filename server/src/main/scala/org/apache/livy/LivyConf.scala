@@ -63,7 +63,6 @@ object LivyConf {
   val SERVER_BASE_PATH = Entry("livy.ui.basePath", "")
 
   val UI_ENABLED = Entry("livy.ui.enabled", true)
-  val UI_HISTORY_SERVER_URL = Entry("livy.ui.history-server-url", "http://spark-history-server")
 
   val REQUEST_HEADER_SIZE = Entry("livy.server.request-header.size", 131072)
   val RESPONSE_HEADER_SIZE = Entry("livy.server.response-header.size", 131072)
@@ -208,19 +207,19 @@ object LivyConf {
   val RECOVERY_STATE_STORE_URL = Entry("livy.server.recovery.state-store.url", null)
 
   /**
-    * The policy of curator connecting to zookeeper.
-    * For example, m, n means retry m times and the interval of retry is n milliseconds.
-    * Please use the new config: livy.server.zk.retry-policy.
-    * Keep this config for back-compatibility.
-    * If both this config and livy.server.zk.retry-policy exist,
-    * livy uses livy.server.zk.retry-policy first.
-    */
+   * The policy of curator connecting to zookeeper.
+   * For example, m, n means retry m times and the interval of retry is n milliseconds.
+   * Please use the new config: livy.server.zk.retry-policy.
+   * Keep this config for back-compatibility.
+   * If both this config and livy.server.zk.retry-policy exist,
+   * livy uses livy.server.zk.retry-policy first.
+   */
   val RECOVERY_ZK_STATE_STORE_RETRY_POLICY =
     Entry("livy.server.recovery.zk-state-store.retry-policy", "5,100")
 
   /**
-    * The policy of curator connecting to zookeeper.
-    * For example, m, n means retry m times and the interval of retry is n milliseconds
+   * The policy of curator connecting to zookeeper.
+   * For example, m, n means retry m times and the interval of retry is n milliseconds
    */
   val ZK_RETRY_POLICY = Entry("livy.server.zk.retry-policy", null)
 
@@ -261,6 +260,10 @@ object LivyConf {
   // Kubernetes client cert file path.
   val KUBERNETES_CLIENT_CERT_FILE = Entry("livy.server.kubernetes.clientCertFile", "")
 
+  // Comma-separated list of the Kubernetes namespaces to allow for applications creation.
+  // All namespaces are allowed if empty.
+  val KUBERNETES_ALLOWED_NAMESPACES = Entry("livy.server.kubernetes.allowedNamespaces", null)
+
   // If Livy can't find the Kubernetes app within this time, consider it lost.
   val KUBERNETES_APP_LOOKUP_TIMEOUT = Entry("livy.server.kubernetes.app-lookup-timeout", "600s")
   // How often Livy polls Kubernetes to refresh Kubernetes app state.
@@ -272,29 +275,6 @@ object LivyConf {
   // How often to check livy session leakage.
   val KUBERNETES_APP_LEAKAGE_CHECK_INTERVAL =
     Entry("livy.server.kubernetes.app-leakage.check-interval", "60s")
-
-  // Weather to create Kubernetes Nginx Ingress for Spark UI.
-  val KUBERNETES_INGRESS_CREATE = Entry("livy.server.kubernetes.ingress.create", false)
-  // Kubernetes Nginx Ingress protocol.
-  val KUBERNETES_INGRESS_PROTOCOL = Entry("livy.server.kubernetes.ingress.protocol", "http")
-  // Kubernetes Nginx Ingress host.
-  val KUBERNETES_INGRESS_HOST = Entry("livy.server.kubernetes.ingress.host", "localhost")
-  // Kubernetes Nginx Ingress additional configuration snippet.
-  val KUBERNETES_INGRESS_ADDITIONAL_CONF_SNIPPET =
-    Entry("livy.server.kubernetes.ingress.additionalConfSnippet", "")
-  // Kubernetes Nginx Ingress additional annotations: key1=value1;key2=value2;... .
-  val KUBERNETES_INGRESS_ADDITIONAL_ANNOTATIONS =
-    Entry("livy.server.kubernetes.ingress.additionalAnnotations", "")
-  // Kubernetes secret name for Nginx Ingress TLS.
-  // Is omitted if 'livy.server.kubernetes.ingress.protocol' value doesn't end with 's'
-  val KUBERNETES_INGRESS_TLS_SECRET_NAME =
-    Entry("livy.server.kubernetes.ingress.tls.secretName", "spark-cluster-tls")
-
-  val KUBERNETES_GRAFANA_LOKI_ENABLED = Entry("livy.server.kubernetes.grafana.loki.enabled", false)
-  val KUBERNETES_GRAFANA_URL = Entry("livy.server.kubernetes.grafana.url", "http://localhost:3000")
-  val KUBERNETES_GRAFANA_LOKI_DATASOURCE =
-    Entry("livy.server.kubernetes.grafana.loki.datasource", "loki")
-  val KUBERNETES_GRAFANA_TIME_RANGE = Entry("livy.server.kubernetes.grafana.timeRange", "6h")
 
   // Whether session timeout should be checked, by default it will be checked, which means inactive
   // session will be stopped after "livy.server.session.timeout"
@@ -340,9 +320,9 @@ object LivyConf {
   )
 
   case class DepConf(
-      override val key: String,
-      override val version: String,
-      override val deprecationMessage: String = "")
+                      override val key: String,
+                      override val version: String,
+                      override val deprecationMessage: String = "")
     extends DeprecatedConf
 
   private val configsWithAlternatives: Map[String, DeprecatedConf] = Map[String, DepConf](
@@ -407,9 +387,14 @@ class LivyConf(loadDefaults: Boolean) extends ClientConf[LivyConf](null) {
   /** Return true if spark master starts with yarn. */
   def isRunningOnYarn(): Boolean = sparkMaster().startsWith("yarn")
 
-
   /** Return true if spark master starts with k8s. */
   def isRunningOnKubernetes(): Boolean = sparkMaster().startsWith("k8s")
+
+  /** Return Kubernetes namespace or all if not set. */
+  def getKubernetesNamespaces(): Set[String] =
+    Option(get(KUBERNETES_ALLOWED_NAMESPACES)).filterNot(_.isEmpty)
+      .map(_.split(",").toSet)
+      .getOrElse(Set.empty)
 
   /** Return the spark deploy mode Livy sessions should use. */
   def sparkDeployMode(): Option[String] = Option(get(LIVY_SPARK_DEPLOY_MODE)).filterNot(_.isEmpty)
