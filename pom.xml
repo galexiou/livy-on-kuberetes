@@ -78,6 +78,7 @@
   </mailingLists>
 
   <properties>
+    <at>@</at>
     <asynchttpclient.version>2.10.1</asynchttpclient.version>
     <hadoop.version>2.7.3</hadoop.version>
     <hadoop.scope>compile</hadoop.scope>
@@ -724,7 +725,7 @@
               <java.awt.headless>true</java.awt.headless>
               <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
               <livy.environment>development</livy.environment>
-              <jacoco.args>${argLine}</jacoco.args>
+              <jacoco.args>${at}{argLine}</jacoco.args>
               <spark.ui.enabled>false</spark.ui.enabled>
               <project.version>${project.version}</project.version>
               <skipRTests>${skipRTests}</skipRTests>
@@ -732,7 +733,7 @@
             </systemProperties>
             <redirectTestOutputToFile>${test.redirectToFile}</redirectTestOutputToFile>
             <useFile>${test.redirectToFile}</useFile>
-            <argLine>${argLine} -Xmx2g</argLine>
+            <argLine>${at}{argLine} -Xmx2g</argLine>
             <failIfNoTests>false</failIfNoTests>
           </configuration>
         </plugin>
@@ -753,7 +754,7 @@
               <java.awt.headless>true</java.awt.headless>
               <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
               <livy.environment>development</livy.environment>
-              <jacoco.args>${argLine}</jacoco.args>
+              <jacoco.args>${at}{argLine}</jacoco.args>
               <spark.ui.enabled>false</spark.ui.enabled>
               <project.version>${project.version}</project.version>
               <skipRTests>${skipRTests}</skipRTests>
@@ -763,7 +764,7 @@
             <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
             <junitxml>.</junitxml>
             <filereports>WDF TestSuite.txt</filereports>
-            <argLine>${argLine} -Xmx2g</argLine>
+            <argLine>${at}{argLine} -Xmx2g</argLine>
           </configuration>
           <executions>
             <execution>
@@ -949,10 +950,10 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>2.17</version>
         <configuration>
-          <verbose>false</verbose>
+<!--          <verbose>false</verbose>-->
           <failOnViolation>true</failOnViolation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
-          <failOnWarning>false</failOnWarning>
+<!--          <failOnWarning>false</failOnWarning>-->
           <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
           <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
           <configLocation>${project.build.directory}/checkstyle.xml</configLocation>
@@ -1112,20 +1113,20 @@
         <spark.scala-2.12.version>3.2.0</spark.scala-2.12.version>
         <spark.scala-2.11.version>2.4.5</spark.scala-2.11.version>
         <spark.version>${spark.scala-2.12.version}</spark.version>
-        <netty.spark-2.12.version>4.1.47.Final</netty.spark-2.12.version>
+        <netty.spark-2.12.version>4.1.68.Final</netty.spark-2.12.version>
         <netty.spark-2.11.version>4.1.47.Final</netty.spark-2.11.version>
         <netty.version>${netty.spark-2.12.version}</netty.version>
         <java.version>1.8</java.version>
         <py4j.version>0.10.9.3</py4j.version>
         <json4s.spark-2.11.version>3.5.3</json4s.spark-2.11.version>
-        <json4s.spark-2.12.version>3.6.6</json4s.spark-2.12.version>
+        <json4s.spark-2.12.version>3.7.0-M11</json4s.spark-2.12.version>
         <json4s.version>${json4s.spark-2.12.version}</json4s.version>
         <spark.bin.download.url>
           https://archive.apache.org/dist/spark/spark-3.2.0/spark-3.2.0-bin-hadoop3.2.tgz
         </spark.bin.download.url>
 <!--        <kubernetes.client.version>5.12.1</kubernetes.client.version>-->
         <kubernetes.client.version>5.4.1</kubernetes.client.version>
-        <jackson.version>2.13.1</jackson.version>
+        <jackson.version>2.12.3</jackson.version>
         <spark.bin.name>spark-3.2.0-bin-hadoop3.2</spark.bin.name>
       </properties>
     </profile>

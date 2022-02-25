@@ -28,9 +28,9 @@ object AppInfo {
 }
 
 case class AppInfo(
-                    var driverLogUrl: Option[String] = None,
-                    var sparkUiUrl: Option[String] = None,
-                    var executorLogUrls: Option[String] = None) {
+  var driverLogUrl: Option[String] = None,
+  var sparkUiUrl: Option[String] = None,
+  var executorLogUrls: Option[String] = None) {
   import AppInfo._
   def asJavaMap: java.util.Map[String, String] =
     Map(
@@ -70,9 +70,9 @@ object SparkApp {
    * @param sparkConf
    */
   def prepareSparkConf(
-                        uniqueAppTag: String,
-                        livyConf: LivyConf,
-                        sparkConf: Map[String, String]): Map[String, String] = {
+      uniqueAppTag: String,
+      livyConf: LivyConf,
+      sparkConf: Map[String, String]): Map[String, String] = {
     if (livyConf.isRunningOnYarn()) {
       val userYarnTags = sparkConf.get(SPARK_YARN_TAG_KEY).map("," + _).getOrElse("")
       val mergedYarnTags = uniqueAppTag + userYarnTags
@@ -112,11 +112,11 @@ object SparkApp {
    * @param uniqueAppTag A tag that can uniquely identify the application.
    */
   def create(
-              uniqueAppTag: String,
-              appId: Option[String],
-              process: Option[LineBufferedProcess],
-              livyConf: LivyConf,
-              listener: Option[SparkAppListener]): SparkApp = {
+      uniqueAppTag: String,
+      appId: Option[String],
+      process: Option[LineBufferedProcess],
+      livyConf: LivyConf,
+      listener: Option[SparkAppListener]): SparkApp = {
     if (livyConf.isRunningOnYarn()) {
       new SparkYarnApp(uniqueAppTag, appId, process, listener, livyConf)
     } else if (livyConf.isRunningOnKubernetes()) {

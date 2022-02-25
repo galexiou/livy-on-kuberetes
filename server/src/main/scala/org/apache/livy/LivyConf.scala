@@ -208,19 +208,19 @@ object LivyConf {
   val RECOVERY_STATE_STORE_URL = Entry("livy.server.recovery.state-store.url", null)
 
   /**
-   * The policy of curator connecting to zookeeper.
-   * For example, m, n means retry m times and the interval of retry is n milliseconds.
-   * Please use the new config: livy.server.zk.retry-policy.
-   * Keep this config for back-compatibility.
-   * If both this config and livy.server.zk.retry-policy exist,
-   * livy uses livy.server.zk.retry-policy first.
-   */
+    * The policy of curator connecting to zookeeper.
+    * For example, m, n means retry m times and the interval of retry is n milliseconds.
+    * Please use the new config: livy.server.zk.retry-policy.
+    * Keep this config for back-compatibility.
+    * If both this config and livy.server.zk.retry-policy exist,
+    * livy uses livy.server.zk.retry-policy first.
+    */
   val RECOVERY_ZK_STATE_STORE_RETRY_POLICY =
     Entry("livy.server.recovery.zk-state-store.retry-policy", "5,100")
 
   /**
-   * The policy of curator connecting to zookeeper.
-   * For example, m, n means retry m times and the interval of retry is n milliseconds
+    * The policy of curator connecting to zookeeper.
+    * For example, m, n means retry m times and the interval of retry is n milliseconds
    */
   val ZK_RETRY_POLICY = Entry("livy.server.zk.retry-policy", null)
 
@@ -346,9 +346,9 @@ object LivyConf {
   )
 
   case class DepConf(
-                      override val key: String,
-                      override val version: String,
-                      override val deprecationMessage: String = "")
+      override val key: String,
+      override val version: String,
+      override val deprecationMessage: String = "")
     extends DeprecatedConf
 
   private val configsWithAlternatives: Map[String, DeprecatedConf] = Map[String, DepConf](

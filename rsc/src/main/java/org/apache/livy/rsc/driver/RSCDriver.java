@@ -63,6 +63,7 @@ import org.apache.livy.rsc.rpc.RpcDispatcher;
 import org.apache.livy.rsc.rpc.RpcServer;
 
 import static org.apache.livy.rsc.RSCConf.Entry.*;
+
 /**
  * Driver code for the Spark client library.
  */
@@ -168,14 +169,12 @@ public class RSCDriver extends BaseProtocol {
     // on the cluster, it would be tricky to solve that problem in a generic way.
     livyConf.set(RPC_SERVER_ADDRESS, null);
 
-    // If we are running on Kubernetes, get RPC_SERVER_ADDRESS from "spark.driver.host" option
-    // this option is set in class org.apache.spark.deploy.k8s.features.DriverServiceFeatureStep:
+    // If we are running on Kubernetes, set RPC_SERVER_ADDRESS from "spark.driver.host" option,
+    // which is set in class org.apache.spark.deploy.k8s.features.DriverServiceFeatureStep:
     // line 61: val driverHostname = s"$resolvedServiceName.${kubernetesConf.namespace()}.svc"
-    if (conf.get("spark.master").startsWith("k8s")) {
-      LOG.info("Setting RPC ADDR. to: "+conf.get("spark.driver.host"));
+    if (livyConf.isRunningOnKubernetes()) {
       livyConf.set(RPC_SERVER_ADDRESS, conf.get("spark.driver.host"));
     }
-
 
     if (livyConf.getBoolean(TEST_STUCK_START_DRIVER)) {
       // Test flag is turned on so we will just infinite loop here. It should cause
@@ -210,7 +209,6 @@ public class RSCDriver extends BaseProtocol {
     Rpc callbackRpc = Rpc.createClient(livyConf, server.getEventLoopGroup(),
       launcherAddress, launcherPort, clientId, secret, this).get();
     try {
-      LOG.info(" ALEXIOU REMOTE DRIVER ADDR. : "+server.getAddress()+": "+server.getPort());
       callbackRpc.call(new RemoteDriverAddress(server.getAddress(), server.getPort())).get(
         livyConf.getTimeAsMs(RPC_CLIENT_HANDSHAKE_TIMEOUT), TimeUnit.MILLISECONDS);
     } catch (TimeoutException te) {
@@ -299,8 +297,6 @@ public class RSCDriver extends BaseProtocol {
     SparkEntries entries = new SparkEntries(conf);
     // Explicitly call sc() to initialize SparkContext.
     entries.sc();
-    LOG.info("ALEXIOU RSCDriver initialized SC for app->: "+entries.sc().appName());
-
     return entries;
   }
 
@@ -348,9 +344,7 @@ public class RSCDriver extends BaseProtocol {
 
       SparkEntries entries = initializeSparkEntries();
       synchronized (jcLock) {
-        LOG.info("ALEXIOU :Trying to initialize context");
         jc = new JobContextImpl(entries, localTmpDir, this);
-        LOG.info("ALEXIOU SC: "+jc.getLocalTmpDir().toString());
         jcLock.notifyAll();
       }
 

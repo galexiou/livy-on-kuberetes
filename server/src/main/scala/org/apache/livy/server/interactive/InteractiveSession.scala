@@ -47,16 +47,16 @@ import org.apache.livy.utils._
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 case class InteractiveRecoveryMetadata(
-                                        id: Int,
-                                        name: Option[String],
-                                        appId: Option[String],
-                                        appTag: String,
-                                        kind: Kind,
-                                        heartbeatTimeoutS: Int,
-                                        owner: String,
-                                        proxyUser: Option[String],
-                                        rscDriverUri: Option[URI],
-                                        version: Int = 1)
+    id: Int,
+    name: Option[String],
+    appId: Option[String],
+    appTag: String,
+    kind: Kind,
+    heartbeatTimeoutS: Int,
+    owner: String,
+    proxyUser: Option[String],
+    rscDriverUri: Option[URI],
+    version: Int = 1)
   extends RecoveryMetadata
 
 object InteractiveSession extends Logging {
@@ -65,16 +65,16 @@ object InteractiveSession extends Logging {
   val RECOVERY_SESSION_TYPE = "interactive"
 
   def create(
-              id: Int,
-              name: Option[String],
-              owner: String,
-              proxyUser: Option[String],
-              livyConf: LivyConf,
-              accessManager: AccessManager,
-              request: CreateInteractiveRequest,
-              sessionStore: SessionStore,
-              mockApp: Option[SparkApp] = None,
-              mockClient: Option[RSCClient] = None): InteractiveSession = {
+      id: Int,
+      name: Option[String],
+      owner: String,
+      proxyUser: Option[String],
+      livyConf: LivyConf,
+      accessManager: AccessManager,
+      request: CreateInteractiveRequest,
+      sessionStore: SessionStore,
+      mockApp: Option[SparkApp] = None,
+      mockClient: Option[RSCClient] = None): InteractiveSession = {
     val appTag = s"livy-session-$id-${Random.alphanumeric.take(8).mkString}"
     val impersonatedUser = accessManager.checkImpersonation(proxyUser, owner)
 
@@ -128,11 +128,11 @@ object InteractiveSession extends Logging {
   }
 
   def recover(
-               metadata: InteractiveRecoveryMetadata,
-               livyConf: LivyConf,
-               sessionStore: SessionStore,
-               mockApp: Option[SparkApp] = None,
-               mockClient: Option[RSCClient] = None): InteractiveSession = {
+      metadata: InteractiveRecoveryMetadata,
+      livyConf: LivyConf,
+      sessionStore: SessionStore,
+      mockApp: Option[SparkApp] = None,
+      mockClient: Option[RSCClient] = None): InteractiveSession = {
     val client = mockClient.orElse(metadata.rscDriverUri.map { uri =>
       val builder = new LivyClientBuilder().setURI(uri)
       builder.build().asInstanceOf[RSCClient]
@@ -155,9 +155,9 @@ object InteractiveSession extends Logging {
   }
 
   private[interactive] def prepareBuilderProp(
-                                               conf: Map[String, String],
-                                               kind: Kind,
-                                               livyConf: LivyConf): mutable.Map[String, String] = {
+    conf: Map[String, String],
+    kind: Kind,
+    livyConf: LivyConf): mutable.Map[String, String] = {
 
     val builderProperties = mutable.Map[String, String]()
     builderProperties ++= conf
@@ -166,11 +166,11 @@ object InteractiveSession extends Logging {
       Option(livyConf.get(LivyConf.REPL_JARS)).map { jars =>
         val regex = """[\w-]+_(\d\.\d\d).*\.jar""".r
         jars.split(",").filter { name => new Path(name).getName match {
-          // Filter out unmatched scala jars
-          case regex(ver) => ver == scalaVersion
-          // Keep all the java jars end with ".jar"
-          case _ => name.endsWith(".jar")
-        }
+            // Filter out unmatched scala jars
+            case regex(ver) => ver == scalaVersion
+            // Keep all the java jars end with ".jar"
+            case _ => name.endsWith(".jar")
+          }
         }.toList
       }.getOrElse {
         val home = sys.env("LIVY_HOME")
@@ -360,22 +360,22 @@ object InteractiveSession extends Logging {
 }
 
 class InteractiveSession(
-                          id: Int,
-                          name: Option[String],
-                          appIdHint: Option[String],
-                          appTag: String,
-                          val client: Option[RSCClient],
-                          initialState: SessionState,
-                          val kind: Kind,
-                          heartbeatTimeoutS: Int,
-                          livyConf: LivyConf,
-                          owner: String,
-                          override val proxyUser: Option[String],
-                          sessionStore: SessionStore,
-                          mockApp: Option[SparkApp]) // For unit test.
+    id: Int,
+    name: Option[String],
+    appIdHint: Option[String],
+    appTag: String,
+    val client: Option[RSCClient],
+    initialState: SessionState,
+    val kind: Kind,
+    heartbeatTimeoutS: Int,
+    livyConf: LivyConf,
+    owner: String,
+    override val proxyUser: Option[String],
+    sessionStore: SessionStore,
+    mockApp: Option[SparkApp]) // For unit test.
   extends Session(id, name, owner, livyConf)
-    with SessionHeartbeat
-    with SparkAppListener {
+  with SessionHeartbeat
+  with SparkAppListener {
 
   import InteractiveSession._
 
@@ -403,8 +403,8 @@ class InteractiveSession(
         .map(new LineBufferedProcess(_, livyConf.getInt(LivyConf.SPARK_LOGS_SIZE)))
 
       if (livyConf.isRunningOnYarn() || driverProcess.isDefined
-        // Create SparkKubernetesApp anyway to recover app monitoring on Livy server restart
-        || livyConf.isRunningOnKubernetes()) {
+              // Create SparkKubernetesApp anyway to recover app monitoring on Livy server restart
+              || livyConf.isRunningOnKubernetes()) {
         Some(SparkApp.create(appTag, appId, driverProcess, livyConf, Some(this)))
       } else {
         None
@@ -430,8 +430,8 @@ class InteractiveSession(
       // Send a dummy job that will return once the client is ready to be used, and set the
       // state to "idle" at that point.
       client.get.submit(new PingJob()).addListener(new JobHandle.Listener[Void]() {
-        override def onJobQueued(job: JobHandle[Void]): Unit = { }
-        override def onJobStarted(job: JobHandle[Void]): Unit = { }
+      override def onJobQueued(job: JobHandle[Void]): Unit = { }
+      override def onJobStarted(job: JobHandle[Void]): Unit = { }
 
         override def onJobCancelled(job: JobHandle[Void]): Unit = errorOut()
 
@@ -535,7 +535,7 @@ class InteractiveSession(
     recordActivity()
 
     val proposals = client.get.completeReplCode(content.code, content.kind,
-      content.cursor).get
+        content.cursor).get
     CompletionResponse(proposals.toList)
   }
 
@@ -626,7 +626,7 @@ class InteractiveSession(
     val opId = operationCounter.incrementAndGet()
     operations(opId) = future
     opId
-  }
+   }
 
   override def appIdKnown(appId: String): Unit = {
     _appId = Option(appId)
