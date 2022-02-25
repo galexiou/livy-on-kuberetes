@@ -87,11 +87,14 @@ public class RpcServer implements Closeable {
     int [] portData = getPortNumberAndRange();
     int startingPortNumber = portData[PortRangeSchema.START_PORT.ordinal()];
     int endPort = portData[PortRangeSchema.END_PORT.ordinal()];
+    LOG.info("Port range between {} and {}",startingPortNumber,endPort);
     boolean isContected = false;
     for(int tries = startingPortNumber ; tries<=endPort ; tries++){
       try {
+        LOG.info("Trying to connect...");
         this.channel = getChannel(tries);
         isContected = true;
+        LOG.info("Connected...");
         break;
       } catch(SocketException e){
         LOG.debug("RPC not able to connect port " + tries + " " + e.getMessage());
@@ -107,6 +110,7 @@ public class RpcServer implements Closeable {
     if (address == null) {
       address = config.findLocalAddress();
     }
+    LOG.info("ADDRESS is {}",address);
     this.address = address;
   }
 
