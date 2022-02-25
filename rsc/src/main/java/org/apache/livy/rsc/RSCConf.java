@@ -149,7 +149,7 @@ public class RSCConf extends ClientConf<RSCConf> {
         + "any external IP address! -> Using {} instead (Alexiou Fix)", address.getCanonicalHostName(),address.getCanonicalHostName()+"-svc");
     LOG.warn("Set {} if you need to bind to another address.",
       Entry.RPC_SERVER_ADDRESS.key);
-    return address.getCanonicalHostName()+"-svc";
+    return address.getCanonicalHostName();
   }
 
   public boolean isRunningOnKubernetes() {

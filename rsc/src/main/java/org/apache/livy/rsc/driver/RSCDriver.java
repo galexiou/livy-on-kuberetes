@@ -206,6 +206,7 @@ public class RSCDriver extends BaseProtocol {
     });
 
     // The RPC library takes care of timing out this.
+
     Rpc callbackRpc = Rpc.createClient(livyConf, server.getEventLoopGroup(),
       launcherAddress, launcherPort, clientId, secret, this).get();
     try {
