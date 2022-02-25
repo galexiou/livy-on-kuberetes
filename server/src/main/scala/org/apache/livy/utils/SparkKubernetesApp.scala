@@ -113,8 +113,8 @@ object SparkKubernetesApp extends Logging {
   }
 
   private[utils] def mapKubernetesState(
-                                         kubernetesAppState: String,
-                                         appTag: String): SparkApp.State.Value = {
+      kubernetesAppState: String,
+      appTag: String): SparkApp.State.Value = {
     import KubernetesApplicationState._
     kubernetesAppState.toLowerCase match {
       case PENDING =>
@@ -144,13 +144,13 @@ object SparkKubernetesApp extends Logging {
 }
 
 class SparkKubernetesApp private[utils](
-                                         appTag: String,
-                                         appIdOption: Option[String],
-                                         process: Option[LineBufferedProcess],
-                                         listener: Option[SparkAppListener],
-                                         livyConf: LivyConf,
-                                         // For unit tests
-                                         kubernetesClient: => LivyKubernetesClient = SparkKubernetesApp.kubernetesClient)
+    appTag: String,
+    appIdOption: Option[String],
+    process: Option[LineBufferedProcess],
+    listener: Option[SparkAppListener],
+    livyConf: LivyConf,
+    // For unit tests
+    kubernetesClient: => LivyKubernetesClient = SparkKubernetesApp.kubernetesClient)
   extends SparkApp with Logging {
 
   import SparkKubernetesApp._
@@ -269,9 +269,9 @@ class SparkKubernetesApp private[utils](
    */
   @tailrec
   private def getAppFromTag(
-                             appTag: String,
-                             pollInterval: Duration,
-                             deadline: Deadline): KubernetesApplication = {
+      appTag: String,
+      pollInterval: Duration,
+      deadline: Deadline): KubernetesApplication = {
     withRetry(kubernetesClient.getApplications().find(_.getApplicationTag.contains(appTag)))
     match {
       case Some(app) => app
@@ -325,11 +325,11 @@ class KubernetesApplication(driverPod: Pod) {
 }
 
 private[utils] case class KubernetesAppReport(
-                                               driver: Option[Pod],
-                                               executors: Seq[Pod],
-                                               appLog: IndexedSeq[String],
-                                               ingress: Option[Ingress],
-                                               livyConf: LivyConf) {
+    driver: Option[Pod],
+    executors: Seq[Pod],
+    appLog: IndexedSeq[String],
+    ingress: Option[Ingress],
+    livyConf: LivyConf) {
 
   import KubernetesConstants._
 
@@ -436,7 +436,7 @@ private[utils] case class KubernetesAppReport(
 }
 
 private[utils] class LivyKubernetesClient(
-                                           client: DefaultKubernetesClient, livyConf: LivyConf) {
+    client: DefaultKubernetesClient, livyConf: LivyConf) {
 
   import KubernetesConstants._
   import scala.collection.JavaConverters._
@@ -458,9 +458,9 @@ private[utils] class LivyKubernetesClient(
       """.stripMargin
 
   def getApplications(
-                       labels: Map[String, String] = Map(SPARK_ROLE_LABEL -> SPARK_ROLE_DRIVER),
-                       appTagLabel: String = SPARK_APP_TAG_LABEL,
-                       appIdLabel: String = SPARK_APP_ID_LABEL): Seq[KubernetesApplication] = {
+      labels: Map[String, String] = Map(SPARK_ROLE_LABEL -> SPARK_ROLE_DRIVER),
+      appTagLabel: String = SPARK_APP_TAG_LABEL,
+      appIdLabel: String = SPARK_APP_ID_LABEL): Seq[KubernetesApplication] = {
     Option(NAMESPACES).filter(_.nonEmpty)
       .map(_.map(client.inNamespace))
       .getOrElse(Seq(client.inAnyNamespace()))
@@ -477,9 +477,9 @@ private[utils] class LivyKubernetesClient(
   }
 
   def getApplicationReport(
-                            app: KubernetesApplication,
-                            cacheLogSize: Int,
-                            appTagLabel: String = SPARK_APP_TAG_LABEL): KubernetesAppReport = {
+      app: KubernetesApplication,
+      cacheLogSize: Int,
+      appTagLabel: String = SPARK_APP_TAG_LABEL): KubernetesAppReport = {
     val pods = client.inNamespace(app.getApplicationNamespace).pods
       .withLabels(Map(appTagLabel -> app.getApplicationTag).asJava)
       .list.getItems.asScala
@@ -491,7 +491,7 @@ private[utils] class LivyKubernetesClient(
   }
 
   private def getApplicationLog(
-                                 app: KubernetesApplication, cacheLogSize: Int): IndexedSeq[String] = {
+      app: KubernetesApplication, cacheLogSize: Int): IndexedSeq[String] = {
     Try(
       client.inNamespace(app.getApplicationNamespace).pods
         .withName(app.getApplicationPod.getMetadata.getName)
@@ -542,9 +542,9 @@ private[utils] class LivyKubernetesClient(
   }
 
   private def buildSparkUIIngress(
-                                   app: KubernetesApplication, protocol: String, host: String, service: Service,
-                                   tlsSecretName: String, additionalConfSnippet: String, additionalAnnotations: (String, String)*
-                                 ): Ingress = {
+      app: KubernetesApplication, protocol: String, host: String, service: Service,
+      tlsSecretName: String, additionalConfSnippet: String, additionalAnnotations: (String, String)*
+  ): Ingress = {
     val appTag = app.getApplicationTag
 
     val annotations = Map(
@@ -599,10 +599,10 @@ private[utils] class LivyKubernetesClient(
   }
 
   private def buildSparkUIService(
-                                   app: KubernetesApplication,
-                                   portName: String = "spark-ui",
-                                   port: Int = 4040
-                                 ): Service = {
+  app: KubernetesApplication,
+      portName: String = "spark-ui",
+      port: Int = 4040
+  ): Service = {
     new ServiceBuilder()
       .withNewMetadata()
       .withName(fixResourceName(s"${app.getApplicationPod.getMetadata.getName}-ui"))
@@ -705,7 +705,7 @@ private[utils] object KubernetesClientFactory {
     extends AnyVal {
 
     def withOption[T](option: Option[T])
-                     (configurator: (T, ConfigBuilder) => ConfigBuilder): ConfigBuilder = {
+      (configurator: (T, ConfigBuilder) => ConfigBuilder): ConfigBuilder = {
       option.map(configurator(_, configBuilder)).getOrElse(configBuilder)
     }
   }
