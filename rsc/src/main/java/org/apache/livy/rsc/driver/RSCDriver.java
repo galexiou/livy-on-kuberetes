@@ -155,7 +155,6 @@ public class RSCDriver extends BaseProtocol {
     Utils.checkArgument(clientId != null, "No client ID provided.");
     String secret = livyConf.get(CLIENT_SECRET);
     Utils.checkArgument(secret != null, "No secret provided.");
-
     String launcherAddress = livyConf.get(LAUNCHER_ADDRESS);
     Utils.checkArgument(launcherAddress != null, "Missing launcher address.");
     int launcherPort = livyConf.getInt(LAUNCHER_PORT);
@@ -167,15 +166,15 @@ public class RSCDriver extends BaseProtocol {
     // If the driver runs on a multi-homed machine, this can lead to issues where the Livy
     // server cannot connect to the auto-detected address, but since the driver can run anywhere
     // on the cluster, it would be tricky to solve that problem in a generic way.
-    livyConf.set(RPC_SERVER_ADDRESS, null);
+//    livyConf.set(RPC_SERVER_ADDRESS, null);
 
     // If we are running on Kubernetes, set RPC_SERVER_ADDRESS from "spark.driver.host" option,
     // which is set in class org.apache.spark.deploy.k8s.features.DriverServiceFeatureStep:
     // line 61: val driverHostname = s"$resolvedServiceName.${kubernetesConf.namespace()}.svc"
-    if (livyConf.isRunningOnKubernetes()) {
+      LOG.info("Since running on k8s driver RPC is: {}", conf.get("spark.driver.host"));
+//    if (livyConf.isRunningOnKubernetes()) {
       livyConf.set(RPC_SERVER_ADDRESS, conf.get("spark.driver.host"));
-    }
-
+//    }
     if (livyConf.getBoolean(TEST_STUCK_START_DRIVER)) {
       // Test flag is turned on so we will just infinite loop here. It should cause
       // timeout and we should still see yarn application being cleaned up.
@@ -192,6 +191,7 @@ public class RSCDriver extends BaseProtocol {
     // Bring up the RpcServer an register the secret provided by the Livy server as a client.
     LOG.info("Starting RPC server...");
     this.server = new RpcServer(livyConf);
+    LOG.info("Registering Client...");
     server.registerClient(clientId, secret, new RpcServer.ClientCallback() {
       @Override
       public RpcDispatcher onNewClient(Rpc client) {

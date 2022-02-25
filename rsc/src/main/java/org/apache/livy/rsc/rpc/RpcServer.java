@@ -175,6 +175,7 @@ public class RpcServer implements Closeable {
    */
   public void registerClient(String clientId, String secret, ClientCallback callback) {
     final ClientInfo client = new ClientInfo(clientId, secret, callback);
+    LOG.info("Client {} registered...",client.id);
     if (pendingClients.putIfAbsent(clientId, client) != null) {
       throw new IllegalStateException(
           String.format("Client '%s' already registered.", clientId));
